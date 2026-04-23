@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telebirr Super App - Mobile Money Training</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Screen with Tab Navigation -->
+        <div class="screen" id="main-screen">
+            <div class="app-header">
+                <div class="header-left">
+                    <div class="logo-placeholder">Ethio Telecom</div>
+                </div>
+                <div class="header-right">
+                    <div class="telebirr-logo">Telebirr</div>
+                </div>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <div class="tab-item active" data-tab="home">
+                    <span class="tab-icon">🏠</span>
+                    <span class="tab-text">Home</span>
+                </div>
+                <div class="tab-item" data-tab="payment">
+                    <span class="tab-icon">💳</span>
+                    <span class="tab-text">Payment</span>
+                </div>
+                <div class="tab-item" data-tab="apps">
+                    <span class="tab-icon">📱</span>
+                    <span class="tab-text">Apps</span>
+                </div>
+                <div class="tab-item" data-tab="account">
+                    <span class="tab-icon">👤</span>
+                    <span class="tab-text">Account</span>
+                </div>
+            </div>
+            
+            <div class="screen-content">
+                <div class="language-selector">
+                    <select id="language-select" class="language-dropdown">
+                        <option value="en">English</option>
+                        <option value="am">Amharic</option>
+                        <option value="om">Affan Orommoo</option>
+                        <option value="ti">Tigrgna</option>
+                        <option value="so">Af Somali</option>
+                    </select>
+                </div>
+                
+                <div class="welcome-marquee">
+                    <div class="marquee-text" id="welcome-text">Welcome to Telebirr super app</div>
+                </div>
+                
+                <h2 class="all-in-one">All-in-One</h2>
+                <h3 class="login-title">Login</h3>
+                
+                <div class="form-group">
+                    <label for="mobile-number">Mobile Number</label>
+                    <input type="tel" id="mobile-number" placeholder="Enter number" class="form-input">
+                </div>
+                
+                <button id="login-btn" class="btn-primary">Next</button>
+                
+                <div class="account-options">
+                    <span>Don't have an account?</span>
+                    <a href="#" class="create-account">Create new account</a>
+                </div>
+                
+                <div class="help-section">
+                    <a href="#" class="help-link">Help</a>
+                </div>
+                
+                <div class="app-footer">
+                    <p>©2023 Ethio telecom. All rights reserved 1.0.0 version</p>
+                </div>
+            </div>
+        </div>
+        <!-- Home Screen -->
+        <div class="screen" id="home-screen">
+            <div class="home-header">
+                <div class="header-top">
+                    <div class="user-info">
+                        <div class="user-avatar">👤</div>
+                        <div class="user-details">
+                            <div class="user-name">Demo User</div>
+                            <div class="user-phone">+251912345678</div>
+                        </div>
+                    </div>
+                    <div class="notification-icon">🔔</div>
+                </div>
+            </div>
+            
+            <div class="balance-section">
+                <div class="balance-card">
+                    <div class="balance-label">Balance (ETB)</div>
+                    <div class="balance-amount" id="main-balance">1,234.56</div>
+                    <div class="mini-balances">
+                        <div class="mini-balance">
+                            <div class="mini-label">Endekise (ETB)</div>
+                            <div class="mini-amount">500.00</div>
+                        </div>
+                        <div class="mini-balance">
+                            <div class="mini-label">Reward (ETB)</div>
+                            <div class="mini-amount">25.50</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="marquee-banner">
+                    <div class="marquee-text">ONE APP FOR ALL YOUR NEEDS!</div>
+                </div>
+            </div>
+            
+            <div class="services-section">
+                <div class="services-grid" id="services-grid">
+                    <div class="service-item" data-service="send-money">
+                        <div class="service-icon">💸</div>
+                        <div class="service-label">Send Money</div>
+                    </div>
+                    <div class="service-item" data-service="cash">
+                        <div class="service-icon">💰</div>
+                        <div class="service-label">Cash In/Out</div>
+                    </div>
+                    <div class="service-item" data-service="airtime">
+                        <div class="service-icon">📱</div>
+                        <div class="service-label">Airtime/Packages</div>
+                    </div>
+                    <div class="service-item" data-service="request">
+                        <div class="service-icon">📨</div>
+                        <div class="service-label">Request Money</div>
+                    </div>
+                    <div class="service-item" data-service="dashen">
+                        <div class="service-icon">🏦</div>
+                        <div class="service-label">Financial Service With Dashen</div>
+                    </div>
+                    <div class="service-item" data-service="cbe">
+                        <div class="service-icon">🏛️</div>
+                        <div class="service-label">Financial Service With CBE</div>
+                    </div>
+                    <div class="service-item" data-service="merchants">
+                        <div class="service-icon">🏪</div>
+                        <div class="service-label">Pay for Merchants</div>
+                    </div>
+                    <div class="service-item" data-service="more">
+                        <div class="service-icon">⚙️</div>
+                        <div class="service-label">More</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="carousel-section">
+                <div class="carousel-container">
+                    <div class="carousel-slide active">
+                        <img src="https://via.placeholder.com/400x150/8DC63F/FFFFFF?text=Special+Offer" alt="Special Offer">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://via.placeholder.com/400x150/2196F3/FFFFFF?text=New+Features" alt="New Features">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://via.placeholder.com/400x150/FF9800/FFFFFF?text=Promotion" alt="Promotion">
+                    </div>
+                </div>
+                <div class="carousel-dots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 1: Send Money -->
+        <div class="screen hidden" id="send-screen">
+            <div class="screen-content">
+                <h1 class="screen-title">Transfer Money</h1>
+                
+                <div class="form-group">
+                    <label for="receiver-name">Receiver Name</label>
+                    <input type="text" id="receiver-name" placeholder="Enter receiver name" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label for="amount">Amount (ETB)</label>
+                    <input type="number" id="amount" placeholder="Enter amount" class="form-input" step="0.01" min="0.01">
+                </div>
+                
+                <button id="send-btn" class="btn-primary">Next</button>
+                
+                <div class="simulation-badge">Simulation / Training Mode</div>
+            </div>
+        </div>
+
+        <!-- Screen 2: Confirmation -->
+        <div class="screen hidden" id="confirmation-screen">
+            <div class="screen-content">
+                <h1 class="screen-title">Confirm Transaction</h1>
+                
+                <div class="confirmation-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Send</span>
+                        <span class="detail-value" id="confirm-amount">0.00 ETB</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">to:</span>
+                        <span class="detail-value" id="confirm-receiver">RECEIVER NAME</span>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="cancel-btn" class="btn-secondary">Cancel</button>
+                    <button id="confirm-btn" class="btn-primary">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 3: PIN Entry -->
+        <div class="screen hidden" id="pin-screen">
+            <div class="screen-content">
+                <h1 class="screen-title">Enter 4-Digit PIN</h1>
+                
+                <div class="pin-container">
+                    <input type="password" id="pin-input" maxlength="4" class="pin-input" placeholder="----">
+                    <div class="pin-dots">
+                        <span class="pin-dot"></span>
+                        <span class="pin-dot"></span>
+                        <span class="pin-dot"></span>
+                        <span class="pin-dot"></span>
+                    </div>
+                </div>
+                
+                <button id="pin-confirm-btn" class="btn-primary">Confirm</button>
+            </div>
+        </div>
+
+        <!-- Screen 4: Processing -->
+        <div class="screen hidden" id="processing-screen">
+            <div class="screen-content">
+                <div class="processing-container">
+                    <div class="spinner"></div>
+                    <p class="processing-text" id="processing-text">Sending...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 5: Success -->
+        <div class="screen hidden" id="success-screen">
+            <div class="success-container">
+                <!-- Header with Download and Share buttons -->
+                <div class="success-header">
+                    <button class="header-btn download-btn">
+                        <span class="btn-icon"><img src="c:\Users\admin\Downloads\download.png" alt="Download"></span>
+                        
+                    </button>
+                    <button class="header-btn share-btn">
+                        <span class="btn-icon"><img src="c:\Users\admin\Downloads\images.png" alt="Share"></span>
+                        
+                    </button>
+                </div>
+                
+                <!-- Success Icon and Text -->
+                <div class="success-section">
+                    <div class="success-icon"><img src="c:\Users\admin\Downloads\success.png" alt="Success"></div>
+                    
+                </div>
+                
+                <!-- Amount Display -->
+                <div class="amount-display">
+                    <span class="success-amount" id="success-amount">-302.00</span>
+                    <span class="success-currency">(ETB)</span>
+                </div>
+                
+                <!-- Transaction Details -->
+                <div class="transaction-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Transaction Time</span>
+                        <span class="detail-value" id="success-time">2026/01/12 22:41:19</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Transaction Type</span>
+                        <span class="detail-value">Transfer Money</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Transaction To</span>
+                        <span class="detail-value" id="success-recipient">Gedialtes</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Transaction Number</span>
+                        <span class="detail-value" id="success-transaction-number">GAC9FLK43</span>
+                    </div>
+                </div>
+                
+                <!-- Find Similar and QR Code -->
+                <div class="action-buttons">
+                    
+                    <button class="qr-code-btn">
+                        <span class="qr-btn-icon"></span>
+                        <span class="qr-btn-text">QR Code</span>
+                    </button>
+                </div>
+                
+                <!-- Advertisement -->
+                <div class="advertisement-section">
+                    <span class="ad-text">Zemen GEBEYA</span>
+                </div>
+                
+                <!-- Finished Button -->
+                <div class="success-actions">
+                    <button id="finished-btn" class="finished-btn">Finished</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message Toast -->
+    <div class="toast hidden" id="error-toast">
+        <span id="error-message">Error message</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

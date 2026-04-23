@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="tele_green">#4CAF50</color>
+    <color name="tele_text_grey">#757575</color>
+    <color name="tele_bg_white">#FFFFFF</color>
+    <color name="tele_dark_text">#212121</color>
+    <color name="tele_stamp_blue">#3F51B5</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
