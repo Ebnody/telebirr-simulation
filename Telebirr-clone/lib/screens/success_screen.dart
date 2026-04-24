@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:telebirrbybr7/utils/receipt_pdf.dart';
-import 'package:telebirrbybr7/utils/telebirr_tariff.dart';
+import 'package:telebirr/utils/receipt_pdf.dart';
+import 'package:telebirr/utils/telebirr_tariff.dart';
 
 class SuccessScreen extends StatelessWidget {
   final String amount;
   final String receiver;
   final String transactionId;
+  final String transactionType;
+  final String? bankName;
+  final String? bankAccountNumber;
 
   const SuccessScreen({
     super.key,
     required this.amount,
     required this.receiver,
     required this.transactionId,
+    this.transactionType = 'Transfer Money',
+    this.bankName,
+    this.bankAccountNumber,
   });
+
+  bool get _isBankTransfer =>
+      bankName != null && bankAccountNumber != null;
 
   String get _currentTimestamp {
     final now = DateTime.now();
@@ -35,7 +44,8 @@ class SuccessScreen extends StatelessWidget {
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const SizedBox.shrink(),
+        automaticallyImplyLeading: false,
+        titleSpacing: 16,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -128,7 +138,7 @@ class SuccessScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '-${TelebirrTariff.formatCurrency(TelebirrTariff.calculateTotalPaid(_amountValue))}',
+                    '-${TelebirrTariff.formatCurrency(TelebirrTariff.calculateTotalPaid(_amountValue, isBankTransfer: _isBankTransfer))}',
                     style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -155,15 +165,34 @@ class SuccessScreen extends StatelessWidget {
               margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
-                children: [
-                  _buildDetailRow('Transaction Time', _currentTimestamp),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildDetailRow('Transaction Type', 'Transfer Money'),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildDetailRow('Transaction To', receiver.toUpperCase()),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildDetailRow('Transaction Number', transactionId),
-                ],
+                children: _isBankTransfer
+                    ? [
+                        _buildDetailRow('Transaction Number', transactionId),
+                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                        _buildDetailRow(
+                            'Transaction Time', _currentTimestamp),
+                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                        _buildDetailRow('Transaction Type', transactionType),
+                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                        _buildDetailRow(
+                            'Transaction To', receiver.toUpperCase()),
+                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                        _buildDetailRow(
+                            'Bank Account Number', bankAccountNumber!),
+                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                        _buildDetailRow('Bank Name', bankName!),
+                      ]
+                    : [
+                        _buildDetailRow(
+                            'Transaction Time', _currentTimestamp),
+                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                        _buildDetailRow('Transaction Type', transactionType),
+                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                        _buildDetailRow(
+                            'Transaction To', receiver.toUpperCase()),
+                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                        _buildDetailRow('Transaction Number', transactionId),
+                      ],
               ),
             ),
 
@@ -243,9 +272,12 @@ class SuccessScreen extends StatelessWidget {
 
   Future<void> _downloadPdf(BuildContext context) async {
     try {
-      final serviceFee = TelebirrTariff.calculateServiceFee(_amountValue);
-      final vat = TelebirrTariff.calculateVat(_amountValue);
-      final totalPaid = TelebirrTariff.calculateTotalPaid(_amountValue);
+      final serviceFee = TelebirrTariff.calculateServiceFee(_amountValue,
+          isBankTransfer: _isBankTransfer);
+      final vat = TelebirrTariff.calculateVat(_amountValue,
+          isBankTransfer: _isBankTransfer);
+      final totalPaid = TelebirrTariff.calculateTotalPaid(_amountValue,
+          isBankTransfer: _isBankTransfer);
 
       await ReceiptPdf.generateAndShare(
         payerName: 'Fikir Abebe Alayu',

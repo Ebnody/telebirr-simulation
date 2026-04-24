@@ -38,17 +38,20 @@ class GridContent extends StatelessWidget {
               const SizedBox(
                 height: 5,
               ),
-              Text(
-                gridLabel[index],
-                maxLines: 3,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.black,
-                  overflow: TextOverflow.ellipsis,
-                  fontSize: 12,
-                  letterSpacing: 0.5,
-                  fontWeight: FontWeight.w500,
-                  height: 0,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  gridLabel[index],
+                  maxLines: 3,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    overflow: TextOverflow.ellipsis,
+                    fontSize: 11,
+                    letterSpacing: 0.3,
+                    fontWeight: FontWeight.w500,
+                    height: 1.1,
+                  ),
                 ),
               ),
             ],
@@ -82,8 +85,13 @@ class GridIcons extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: icon == Icons.ad_units_outlined
           ? Badge(
-              label: const Text('+10%'),
+              label: const Text('up to 25%'),
+              textStyle: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+              ),
               backgroundColor: Colors.amber,
+              alignment: AlignmentDirectional.topStart,
               child: Icon(
                 icon,
                 color: const Color.fromRGBO(140, 197, 68, 0.85),
@@ -103,22 +111,22 @@ List<Widget> topGridIcon = const [
   GridIcons(icon: Icons.wallet),
   GridIcons(icon: Icons.wallet_giftcard),
   GridIcons(icon: Icons.ad_units_outlined),
-  GridIcons(icon: Icons.clean_hands_sharp),
-  Image(image: AssetImage('images/dashen.png'), width: 20),
+  Image(image: AssetImage('images/zemen.jpg'), width: 40),
+  Image(image: AssetImage('images/dashen.png'), width: 40),
   Image(
     image: AssetImage('images/cbe.png'),
     width: 40,
   ),
-  GridIcons(icon: Icons.storefront),
-  GridIcons(icon: Icons.window_sharp),
+  Image(image: AssetImage('images/siinqee.png'), width: 40),
+  Image(image: AssetImage('images/bank.png'), width: 35),
 ];
 List<Widget> bottomGridIcon = const [
-  Image(image: AssetImage('images/christmas.png'), width: 70),
-  Image(image: AssetImage('images/ethio-logo.png'), width: 30),
-  GridIcons(icon: Icons.calendar_month_outlined),
-  GridIcons(icon: FontAwesomeIcons.building),
-  GridIcons(icon: Icons.wallet_sharp),
-  GridIcons(icon: Icons.payments_outlined),
-  GridIcons(icon: Icons.location_on),
-  GridIcons(icon: Icons.add_circle_outline_sharp),
+  Image(image: AssetImage('images/anniversary.jpg'), width: 40),
+  Image(image: AssetImage('images/awash.jpg'), width: 40),
+  Image(image: AssetImage('images/merchant.jpg'), width: 40),
+  Image(image: AssetImage('images/teleev.jpg'), width: 40),
+  Image(image: AssetImage('images/tolo.jpg'), width: 40),
+  Image(image: AssetImage('images/aa.png'), width: 40),
+  Image(image: AssetImage('images/aa.png'), width: 40),
+  Image(image: AssetImage('images/3p.png'), width: 40),
 ];

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:telebirrbybr7/screens/main_screen.dart';
-import 'package:telebirrbybr7/utils/subscription_manager.dart';
+import 'package:telebirr/screens/main_screen.dart';
+import 'package:telebirr/utils/subscription_manager.dart';
 
 class ActivationScreen extends StatefulWidget {
   const ActivationScreen({super.key});

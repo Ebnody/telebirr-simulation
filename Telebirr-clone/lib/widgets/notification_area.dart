@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:telebirrbybr7/screens/home_screen.dart';
+import 'package:telebirr/screens/home_screen.dart';
 
 class NotificationArea extends StatelessWidget {
   const NotificationArea({

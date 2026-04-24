@@ -4,41 +4,49 @@ import 'package:flutter/services.dart';
 import 'package:telebirr/screens/success_screen.dart';
 import 'package:telebirr/widgets/transfer_loading_overlay.dart';
 
-class SendMoneyScreen extends StatefulWidget {
-  const SendMoneyScreen({super.key});
+/// List of supported destination banks, kept alphabetically sorted.
+const List<String> _banks = [
+  'Abay Bank',
+  'Ahadu Bank',
+  'Amhara Bank',
+  'Awash Bank',
+  'Bank of Abyssinia',
+  'Berhan Bank',
+  'Commercial Bank of Ethiopia',
+  'Cooperative Bank of Oromia',
+  'Dashen Bank',
+  'Debub Global Bank',
+  'Hibret Bank',
+  'Hijra Bank',
+  'Nib International Bank',
+  'Oromia Bank',
+  'Sidama Bank',
+  'Tsehay Bank',
+  'Wegagen Bank',
+  'Zemen Bank',
+];
+
+class TransferToBankScreen extends StatefulWidget {
+  const TransferToBankScreen({super.key});
 
   @override
-  State<SendMoneyScreen> createState() => _SendMoneyScreenState();
+  State<TransferToBankScreen> createState() => _TransferToBankScreenState();
 }
 
-class _SendMoneyScreenState extends State<SendMoneyScreen> {
+class _TransferToBankScreenState extends State<TransferToBankScreen> {
+  final TextEditingController _accountController = TextEditingController();
   final TextEditingController _receiverController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  String? _selectedBank;
   bool _isLoading = false;
 
   @override
   void dispose() {
+    _accountController.dispose();
     _receiverController.dispose();
     _amountController.dispose();
     super.dispose();
-  }
-
-  void _sendMoney() {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Simulate sending money — overlay stays visible for 5 seconds
-      Future.delayed(const Duration(seconds: 5), () {
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-        });
-        _navigateToSuccess();
-      });
-    }
   }
 
   /// Generates a unique 9-character alphanumeric transaction ID
@@ -49,6 +57,29 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     return List.generate(9, (_) => chars[rand.nextInt(chars.length)]).join();
   }
 
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedBank == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a bank')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Overlay stays visible for 5 seconds before showing success page
+    Future.delayed(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      _navigateToSuccess();
+    });
+  }
+
   void _navigateToSuccess() {
     Navigator.push(
       context,
@@ -57,6 +88,9 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
           amount: _amountController.text,
           receiver: _receiverController.text,
           transactionId: _generateTransactionId(),
+          transactionType: 'Transfer to Bank',
+          bankName: _selectedBank!,
+          bankAccountNumber: _accountController.text,
         ),
       ),
     );
@@ -77,7 +111,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Send Money',
+          'Transfer to Bank',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -109,15 +143,72 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                   child: Column(
                     children: [
                       const Icon(
-                        Icons.wallet,
+                        Icons.account_balance,
                         size: 60,
                         color: Color.fromRGBO(140, 199, 63, 1),
                       ),
                       const SizedBox(height: 20),
+                      DropdownButtonFormField<String>(
+                        value: _selectedBank,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Bank Name',
+                          hintText: 'Select bank',
+                          prefixIcon: const Icon(Icons.account_balance),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        items: _banks
+                            .map(
+                              (bank) => DropdownMenuItem<String>(
+                                value: bank,
+                                child: Text(bank),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedBank = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please select a bank';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _accountController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'Account Number',
+                          hintText: 'Enter account number',
+                          prefixIcon: const Icon(Icons.numbers),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter account number';
+                          }
+                          if (value.length < 6) {
+                            return 'Account number is too short';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
                       TextFormField(
                         controller: _receiverController,
                         decoration: InputDecoration(
-                          labelText: 'Receiver Name',
+                          labelText: "Receiver's Name",
                           hintText: 'Enter receiver name',
                           prefixIcon: const Icon(Icons.person),
                           border: OutlineInputBorder(
@@ -135,7 +226,9 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                       TextFormField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         decoration: InputDecoration(
                           labelText: 'Amount (ETB)',
                           hintText: 'Enter amount',
@@ -148,7 +241,8 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                           if (value == null || value.isEmpty) {
                             return 'Please enter amount';
                           }
-                          if (double.tryParse(value) == null || double.parse(value) <= 0) {
+                          if (double.tryParse(value) == null ||
+                              double.parse(value) <= 0) {
                             return 'Please enter a valid amount';
                           }
                           return null;
@@ -162,7 +256,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _sendMoney,
+                    onPressed: _isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(140, 199, 63, 1),
                       foregroundColor: Colors.white,
@@ -171,7 +265,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                       ),
                     ),
                     child: const Text(
-                      'SEND',
+                      'TRANSFER',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

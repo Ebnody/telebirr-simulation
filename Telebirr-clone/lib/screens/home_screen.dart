@@ -3,13 +3,14 @@ import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:marquee/marquee.dart';
-import 'package:telebirrbybr7/constants.dart';
-import 'package:telebirrbybr7/widgets/balance_info.dart';
-import 'package:telebirrbybr7/widgets/grid_content.dart';
-import 'package:telebirrbybr7/widgets/notification_area.dart';
-import 'package:telebirrbybr7/widgets/transaction_detail.dart';
-import 'package:telebirrbybr7/screens/send_money_screen.dart';
-import 'package:telebirrbybr7/widgets/user_introduction.dart';
+import 'package:telebirr/constants.dart';
+import 'package:telebirr/widgets/balance_info.dart';
+import 'package:telebirr/widgets/grid_content.dart';
+import 'package:telebirr/widgets/notification_area.dart';
+import 'package:telebirr/widgets/transaction_detail.dart';
+import 'package:telebirr/screens/send_money_screen.dart';
+import 'package:telebirr/screens/transfer_to_bank_screen.dart';
+import 'package:telebirr/widgets/user_introduction.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -82,13 +83,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             minAmount: 0,
                             maxAmount: 500,
                           ),
-                          BalanceInfo(
-                            label: 'Reward (ETB) ',
-                            balanceFontSize: 17,
-                            labelFontSize: 13,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            minAmount: 0,
-                            maxAmount: 200,
+                          Padding(
+                            padding: EdgeInsets.only(right: 30.0),
+                            child: BalanceInfo(
+                              label: 'Reward (ETB) ',
+                              balanceFontSize: 17,
+                              labelFontSize: 13,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              minAmount: 0,
+                              maxAmount: 200,
+                            ),
                           ),
                         ],
                       ),
@@ -137,6 +141,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => const SendMoneyScreen(),
+                            ),
+                          );
+                        } else if (index == 7) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TransferToBankScreen(),
                             ),
                           );
                         }
