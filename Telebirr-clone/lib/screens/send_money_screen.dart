@@ -82,6 +82,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
         ),
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           _buildBody(),
           TransferLoadingOverlay(visible: _isLoading),

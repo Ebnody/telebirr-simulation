@@ -71,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         label: 'Balance (ETB) ',
                         balanceFontSize: 25,
                         labelFontSize: 16,
+                        persistKey: 'main_balance',
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,

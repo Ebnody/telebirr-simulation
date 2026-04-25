@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:telebirr/data/balance_store.dart';
 
 class BalanceInfo extends StatefulWidget {
   final String label;
@@ -9,6 +10,7 @@ class BalanceInfo extends StatefulWidget {
   final CrossAxisAlignment crossAxisAlignment;
   final int minAmount;
   final int maxAmount;
+  final String? persistKey;
 
   const BalanceInfo({
     super.key,
@@ -18,6 +20,7 @@ class BalanceInfo extends StatefulWidget {
     this.crossAxisAlignment = CrossAxisAlignment.center,
     this.minAmount = 40000,
     this.maxAmount = 50000,
+    this.persistKey,
   });
 
   @override
@@ -31,8 +34,16 @@ class _BalanceInfoState extends State<BalanceInfo> {
   @override
   void initState() {
     super.initState();
-    final range = widget.maxAmount - widget.minAmount;
-    _balance = widget.minAmount + Random().nextInt(range > 0 ? range : 1);
+    if (widget.persistKey != null) {
+      _balance = BalanceStore.getOrCreate(
+        widget.persistKey!,
+        min: widget.minAmount,
+        max: widget.maxAmount,
+      );
+    } else {
+      final range = widget.maxAmount - widget.minAmount;
+      _balance = widget.minAmount + Random().nextInt(range > 0 ? range : 1);
+    }
   }
 
   void toggleBalanceVisibility() {

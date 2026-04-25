@@ -3,23 +3,22 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-/// Cross-platform receipt PDF generator using the `pdf` package.
-/// Works on Android, iOS, Web, Windows, and macOS.
+/// Cross-platform receipt PDF generator matching the official telebirr format.
 class ReceiptPdf {
-  static const PdfColor _green = PdfColor.fromInt(0xFF8CC63F);
+  static const PdfColor _green = PdfColor.fromInt(0xFF5AB034); // telebirr green
+  static const PdfColor _darkGreen = PdfColor.fromInt(0xFF17B877);
+  static const PdfColor _greyHeader = PdfColor.fromInt(0xFFEFEFEF);
+  static const PdfColor _lightGrey = PdfColor.fromInt(0xFFF9F9F9);
   static const PdfColor _blue = PdfColor.fromInt(0xFF0089D0);
   static const PdfColor _stampBlue = PdfColor.fromInt(0xFF1F4A9C);
-  static const PdfColor _darkGreen = PdfColor.fromInt(0xFF17B877);
-  static const PdfColor _greyBorder = PdfColor.fromInt(0xFFB5B5B5);
-  static const PdfColor _greyHeader = PdfColor.fromInt(0xFFE8E8E8);
-  static const PdfColor _lightGrey = PdfColor.fromInt(0xFFECECEC);
-  static const PdfColor _yellow = PdfColor.fromInt(0xFFFFC107);
-  static const PdfColor _red = PdfColor.fromInt(0xFFE7332C);
 
   static Future<void> generateAndShare({
     required String payerName,
     required String payerPhone,
     required String payerAccountType,
+    String payerTin = '',
+    String vatRegNo = '',
+    String vatRegDate = '',
     required String creditedPartyName,
     required String creditedPartyAccount,
     required String transactionStatus,
@@ -35,167 +34,268 @@ class ReceiptPdf {
     required String paymentMode,
     required String paymentReason,
     required String paymentChannel,
+    String? bankAccountNumber,
   }) async {
     final pdf = pw.Document();
 
-    // Load Amharic-capable font
-    final ttfReg =
-        await rootBundle.load('packages/printing/assets/NotoKufiArabic-Regular.ttf');
+    // Load fonts
+    final ttfReg = await rootBundle.load('assets/fonts/NotoSansEthiopic-Regular.ttf');
     final fontReg = pw.Font.ttf(ttfReg);
-    pw.Font fontBold;
-    try {
-      final ttfBold =
-          await rootBundle.load('packages/printing/assets/NotoKufiArabic-Bold.ttf');
-      fontBold = pw.Font.ttf(ttfBold);
-    } catch (_) {
-      fontBold = fontReg;
-    }
+    final ttfBold = await rootBundle.load('assets/fonts/NotoSansEthiopic-Bold.ttf');
+    final fontBold = pw.Font.ttf(ttfBold);
 
-    // Attempt to load Amharic font from Google Fonts via printing
-    pw.Font amharicFont = fontReg;
-    try {
-      amharicFont = await PdfGoogleFonts.notoSansEthiopicRegular();
-    } catch (_) {}
+    // Try to load images (fallback to empty if missing)
+    pw.MemoryImage? ethioLogo;
+    pw.MemoryImage? telebirrLogo;
+    pw.MemoryImage? stampImg;
+    pw.MemoryImage? stripesImg;
+    pw.MemoryImage? bannerImg;
 
-    pw.Font amharicFontBold = fontBold;
-    try {
-      amharicFontBold = await PdfGoogleFonts.notoSansEthiopicBold();
-    } catch (_) {}
+    try { ethioLogo = pw.MemoryImage((await rootBundle.load('images/ethio-logo.png')).buffer.asUint8List()); } catch (_) {}
+    try { telebirrLogo = pw.MemoryImage((await rootBundle.load('images/telebirr.png')).buffer.asUint8List()); } catch (_) {}
+    // Custom images the user will drop into images/ folder
+    try { stampImg = pw.MemoryImage((await rootBundle.load('images/stamp.png')).buffer.asUint8List()); } catch (_) {}
+    try { stripesImg = pw.MemoryImage((await rootBundle.load('images/stripes.png')).buffer.asUint8List()); } catch (_) {}
+    try { bannerImg = pw.MemoryImage((await rootBundle.load('images/bringing_new_possibilities.png')).buffer.asUint8List()); } catch (_) {}
 
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.fromLTRB(30, 25, 30, 25),
+        margin: const pw.EdgeInsets.fromLTRB(40, 30, 40, 20),
         theme: pw.ThemeData.withFont(
-          base: amharicFont,
-          bold: amharicFontBold,
+          base: fontReg,
+          bold: fontBold,
         ),
-        build: (context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+        build: (pw.Context context) {
+          return pw.Stack(
             children: [
-              // TOP HEADER
-              _buildHeader(),
-              pw.SizedBox(height: 6),
-              pw.Container(height: 1.5, color: _green),
-              pw.SizedBox(height: 6),
-
-              // Title
-              pw.Center(
-                child: pw.Text(
-                  'የቴሌብር ግብይት መረጃ / telebirr Transaction information',
-                  style: pw.TextStyle(
-                    fontSize: 12,
-                    color: _green,
-                    fontWeight: pw.FontWeight.bold,
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  // --- 1. HEADER ---
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      // Logos
+                      pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.center,
+                        children: [
+                          if (ethioLogo != null) pw.Image(ethioLogo, width: 90),
+                          pw.SizedBox(width: 10),
+                          if (telebirrLogo != null) pw.Image(telebirrLogo, width: 70),
+                        ],
+                      ),
+                      // Company Info
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Ethio telecom Share Company', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          _headerRow('TIN No.', '0000030603'),
+                          _headerRow('VAT Reg. No.', '012700'),
+                          _headerRow('VAT Reg. Date', '01/01/2003'),
+                          _headerRow('P.O.Box', '1047 Addis Ababa, Ethiopia'),
+                          _headerRow('Tel.', '251(0) 115 505 678'),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-              ),
-              pw.SizedBox(height: 6),
-              pw.Container(height: 1.5, color: _green),
-              pw.SizedBox(height: 10),
+                  pw.SizedBox(height: 5),
+                  pw.Divider(color: _green, thickness: 1.5),
 
-              // Transaction info
-              _buildTransactionInfo(
-                payerName: payerName,
-                payerPhone: payerPhone,
-                payerAccountType: payerAccountType,
-                creditedPartyName: creditedPartyName,
-                creditedPartyAccount: creditedPartyAccount,
-                transactionStatus: transactionStatus,
-              ),
-
-              pw.SizedBox(height: 10),
-
-              // Invoice header bar
-              pw.Container(
-                color: _greyHeader,
-                padding: const pw.EdgeInsets.symmetric(vertical: 4),
-                decoration: pw.BoxDecoration(
-                  color: _greyHeader,
-                  border: pw.Border.all(color: _greyBorder, width: 0.5),
-                ),
-                child: pw.Center(
-                  child: pw.Text(
-                    'የክፍያ ዝርዝር / Invoice details',
-                    style: pw.TextStyle(
-                      fontSize: 11,
-                      fontWeight: pw.FontWeight.bold,
+                  // --- 2. TITLE ---
+                  pw.Center(
+                    child: pw.Text(
+                      'የቴሌብር ክፈያ መረጃ/telebirr Transaction information',
+                      style: pw.TextStyle(color: _green, fontWeight: pw.FontWeight.bold, fontSize: 9),
                     ),
                   ),
+                  pw.SizedBox(height: 5),
+
+                  // --- 3. PAYER/RECEIVER INFO ---
+                  _infoRow('የከፋይ ስም/Payer Name', payerName),
+                  _infoRow('የከፋይ ቴሌብር ቁ./Payer telebirr no.', payerPhone),
+                  _infoRow('የከፋይ አካውንት አይነት/Payer account type', payerAccountType),
+                  _infoRow('የከፋይ ቲን ቁ. / Payer TIN No', payerTin),
+                  _infoRow('የከፋይ ተ.እ.ታ.ቁ./VAT Reg. No', vatRegNo),
+                  _infoRow('የከፋይ ተ.እ.ታ.ቁ. ምዝገባ ቀን/VAT Reg. Date', vatRegDate),
+                  _infoRow('ገንዘብ ተቀባይ ስም/Credited Party name', creditedPartyName),
+                  _infoRow('ገንዘብ ተቀባይ ቴሌብር ቁ./Credited party account no', creditedPartyAccount),
+                  _infoRow('የክፍያው ሁኔታ/Transaction status', transactionStatus),
+                  if (bankAccountNumber != null)
+                    _infoRow('የባንክ አካውንት ቁጥር/Bank account number', bankAccountNumber),
+
+                  pw.SizedBox(height: 15),
+
+                  // --- 4. TABLE ---
+                  pw.Table(
+                    border: pw.TableBorder.all(color: PdfColors.grey500, width: 0.5),
+                    children: [
+                      // Table Header
+                      pw.TableRow(
+                        decoration: const pw.BoxDecoration(color: _greyHeader),
+                        children: [
+                          _tableCell('የክፍያ ዝርዝር/ Invoice details', isHeader: true, colSpan: 3),
+                        ],
+                      ),
+                      pw.TableRow(
+                        children: [
+                          _tableCell('የክፍያ ቁጥር/Invoice No.', isHeader: true),
+                          _tableCell('የክፍያ ቀን/Payment date', isHeader: true),
+                          _tableCell('የተከፈለው መጠን/Settled Amount', isHeader: true),
+                        ],
+                      ),
+                      // Table Data
+                      pw.TableRow(
+                        children: [
+                          _tableCell(invoiceNo),
+                          _tableCell(paymentDate),
+                          _tableCell('$settledAmount Birr'),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // --- 5. RIGHT ALIGNED SUMMARY ---
+                  pw.Container(
+                    width: double.infinity,
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border(
+                        left: const pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                        right: const pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                        bottom: const pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+                      ),
+                    ),
+                    child: pw.Row(
+                      children: [
+                        pw.Expanded(flex: 2, child: pw.SizedBox()), // Empty space on left
+                        pw.Expanded(
+                          flex: 1,
+                          child: pw.Column(
+                            children: [
+                              _summaryRow('የቴምብር ካርድ/Stamp Duty', '$stampDuty Birr'),
+                              _summaryRow('ቅናሽ/Discount Amount', '$discountAmount Birr'),
+                              _summaryRow('የአገልግሎት ክፍያ/Service fee', '$serviceFee Birr'),
+                              _summaryRow('የአገልግሎት ክፍያ ተ.እ.ታ/Service fee VAT', '$serviceFeeVat Birr'),
+                              _summaryRow('ጠቅላላ የተከፈለ/Total Paid Amount', '$totalPaidAmount Birr', isBold: true),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  pw.SizedBox(height: 25),
+
+                  // --- 6. BOTTOM INFO ---
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Expanded(
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            _bottomInfoRow('የገንዘቡ ልክ በፊደል/Total Amount in word', amountInWords),
+                            _bottomInfoRow('የክፍያ ዘዴ/Payment Mode', paymentMode),
+                            _bottomInfoRow('የክፍያ ምክንያት/Payment Reason', paymentReason),
+                            _bottomInfoRow('የክፍያ መንገድ/Payment channel', paymentChannel),
+                            _bottomInfoRow('የደንበኛ ማስታወሻ/Customer Note', ''),
+                          ],
+                        ),
+                      ),
+                      // Stamp overlay area (handled by Stack, so we leave space here)
+                      pw.SizedBox(width: 120),
+                    ],
+                  ),
+
+                  pw.Spacer(),
+
+                  // --- 7. QR CODE ---
+                  pw.Center(
+                    child: pw.Column(
+                      children: [
+                        pw.Container(
+                          padding: const pw.EdgeInsets.all(3),
+                          decoration: pw.BoxDecoration(
+                            border: pw.Border.all(color: _green, width: 1.5),
+                            borderRadius: pw.BorderRadius.circular(4),
+                          ),
+                          child: pw.BarcodeWidget(
+                            data: 'telebirr_$invoiceNo',
+                            barcode: pw.Barcode.qrCode(),
+                            width: 60,
+                            height: 60,
+                            color: PdfColors.black,
+                          ),
+                        ),
+                        pw.SizedBox(height: 5),
+                        pw.Text('Scan the QR using telebirr SuperApp to verify the payment', style: const pw.TextStyle(fontSize: 6, color: PdfColors.grey700)),
+                      ],
+                    ),
+                  ),
+
+                  pw.SizedBox(height: 15),
+
+                  // --- 8. FOOTER ---
+                  pw.Text('ቴሌብርን ስለተጠቀሙ እናመሰግናለን/ Thank you for using telebirr', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                  pw.SizedBox(height: 2),
+                  pw.Text('ለተጨማሪ መረጃ/Please contact us:', style: const pw.TextStyle(fontSize: 7)),
+                  pw.SizedBox(height: 15),
+
+                  // Footer Banner
+                  pw.Center(
+                    child: bannerImg != null 
+                        ? pw.Image(bannerImg, height: 25)
+                        : pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                            decoration: pw.BoxDecoration(
+                              color: _green,
+                              borderRadius: pw.BorderRadius.circular(12),
+                            ),
+                            child: pw.Text('Bringing new possibilities ⏩', style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                          ),
+                  ),
+                ],
+              ),
+
+              // --- 9. STAMP OVERLAY ---
+              // Placed exactly like the screenshot over the bottom-right corner of the table/info
+              if (stampImg != null)
+                pw.Positioned(
+                  right: 30,
+                  bottom: 180,
+                  child: pw.Image(stampImg, width: 110, height: 110),
                 ),
-              ),
-
-              // Invoice table + fees
-              _buildInvoiceTable(
-                invoiceNo: invoiceNo,
-                paymentDate: paymentDate,
-                settledAmount: settledAmount,
-                stampDuty: stampDuty,
-                discountAmount: discountAmount,
-                serviceFee: serviceFee,
-                serviceFeeVat: serviceFeeVat,
-                totalPaidAmount: totalPaidAmount,
-              ),
-
-              pw.SizedBox(height: 16),
-
-              // Payment details + stamp
-              _buildPaymentDetails(
-                amountInWords: amountInWords,
-                paymentMode: paymentMode,
-                paymentReason: paymentReason,
-                paymentChannel: paymentChannel,
-              ),
-
-              pw.SizedBox(height: 16),
-
-              // QR label
-              pw.Center(
-                child: pw.Column(
-                  children: [
-                    pw.Container(
-                      width: 90,
-                      height: 90,
+              // Fallback fake stamp if no image provided
+              if (stampImg == null)
+                pw.Positioned(
+                  right: 30,
+                  bottom: 180,
+                  child: pw.Transform.rotate(
+                    angle: -0.15,
+                    child: pw.Container(
+                      width: 100,
+                      height: 100,
                       decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.black, width: 0.5),
+                        shape: pw.BoxShape.circle,
+                        border: pw.Border.all(color: _stampBlue, width: 1.5),
                       ),
-                      child: pw.BarcodeWidget(
-                        data: 'telebirr_$invoiceNo',
-                        barcode: pw.Barcode.qrCode(),
-                        drawText: false,
+                      alignment: pw.Alignment.center,
+                      child: pw.Text(
+                        'Ethio telecom Head Office',
+                        style: pw.TextStyle(color: _stampBlue, fontSize: 8),
                       ),
                     ),
-                    pw.SizedBox(height: 4),
-                    pw.Text(
-                      'Scan the QR using telebirr SuperApp to verify the payment',
-                      style: const pw.TextStyle(fontSize: 8),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
 
-              pw.SizedBox(height: 12),
-
-              pw.Text(
-                'ቴሌብርን ስለተጠቀሙ እናመሰግናለን / Thank you for using telebirr',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                'ለተጨማሪ መረጃ / Please contact us:',
-                style: const pw.TextStyle(fontSize: 9),
-              ),
-              pw.SizedBox(height: 2),
-              pw.Text(
-                'https://www.facebook.com/telebirr   https://x.com/telebirr   telebirr@ethiotel.et   https://t.me/telebirr',
-                style: pw.TextStyle(fontSize: 8, color: _blue),
-              ),
-
-              pw.Spacer(),
-
-              // Bottom green bar
-              _buildBottomBar(),
+              // --- 10. DIAGONAL STRIPES ---
+              if (stripesImg != null)
+                pw.Positioned(
+                  right: -40,
+                  bottom: -20,
+                  child: pw.Image(stripesImg, width: 80),
+                ),
             ],
           );
         },
@@ -209,411 +309,81 @@ class ReceiptPdf {
     );
   }
 
-  static pw.Widget _buildHeader() {
-    return pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
-          children: [
-            pw.Container(
-              width: 28,
-              height: 28,
-              decoration: pw.BoxDecoration(
-                color: _green,
-                shape: pw.BoxShape.circle,
-              ),
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-                'e',
-                style: pw.TextStyle(
-                  color: PdfColors.white,
-                  fontSize: 20,
-                  fontWeight: pw.FontWeight.bold,
-                  fontStyle: pw.FontStyle.italic,
-                ),
-              ),
-            ),
-            pw.SizedBox(width: 6),
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'ethio',
-                  style: pw.TextStyle(
-                    color: _green,
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.Text('telecom',
-                    style: const pw.TextStyle(fontSize: 9)),
-              ],
-            ),
-            pw.SizedBox(width: 12),
-            pw.Text(
-              'telebirr',
-              style: pw.TextStyle(
-                color: _blue,
-                fontSize: 22,
-                fontWeight: pw.FontWeight.bold,
-                fontStyle: pw.FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
-        pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('Ethio telecom Share Company',
-                style: pw.TextStyle(
-                    fontSize: 9, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 3),
-            _kv('TIN No.', '0000030603'),
-            _kv('VAT Reg. No.', '012700'),
-            _kv('VAT Reg. Date', '01/01/2005'),
-            _kv('P.O.Box', 'K047 Addis Ababa, Ethiopia'),
-            _kv('Tel.', '25111 55 505 678'),
-          ],
-        ),
-      ],
+  static pw.Widget _headerRow(String label, String value) {
+    return pw.Container(
+      width: 160,
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: const pw.TextStyle(fontSize: 8)),
+          pw.Text(value, style: const pw.TextStyle(fontSize: 8)),
+        ],
+      ),
     );
   }
 
-  static pw.Widget _kv(String k, String v) {
+  static pw.Widget _infoRow(String label, String value) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 0.5),
+      padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
       child: pw.Row(
         children: [
-          pw.SizedBox(
-              width: 80, child: pw.Text(k, style: const pw.TextStyle(fontSize: 8))),
-          pw.Text(v, style: const pw.TextStyle(fontSize: 8)),
+          pw.Expanded(flex: 3, child: pw.Text(label, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey800))),
+          pw.Expanded(flex: 4, child: pw.Text(value, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
         ],
       ),
     );
   }
 
-  static pw.Widget _buildTransactionInfo({
-    required String payerName,
-    required String payerPhone,
-    required String payerAccountType,
-    required String creditedPartyName,
-    required String creditedPartyAccount,
-    required String transactionStatus,
-  }) {
-    final rows = <List<String>>[
-      ['የከፋይ ስም / Payer Name', payerName],
-      ['የከፋይ ቴሌብር ቁ. / Payer telebirr no.', payerPhone],
-      ['የከፋይ አካውንት አይነት / Payer account type', payerAccountType],
-      ['የከፋይ ቲ.አ.ን ቁ. / Payer TIN No', ''],
-      ['የከፋይ ቫ.ት.መ.ቁ / Payer VAT Reg. No', ''],
-      ['የከፋይ ቫ.ት.መ.ቀን / Payer VAT Reg. Date', ''],
-      ['ገንዘብ ተቀባይ ስም / Credited Party name', creditedPartyName],
-      ['ገንዘብ ተቀባይ አካውንት ቁ. / Credited party account no', creditedPartyAccount],
-      ['የግብይት ሁኔታ / transaction status', transactionStatus],
-    ];
-
-    return pw.Column(
-      children: rows.map((row) {
-        final isStatus = row[0].contains('transaction status');
-        return pw.Padding(
-          padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
-          child: pw.Row(
-            children: [
-              pw.Expanded(
-                flex: 5,
-                child: pw.Text(row[0],
-                    style: const pw.TextStyle(fontSize: 9)),
-              ),
-              pw.Expanded(
-                flex: 4,
-                child: pw.Text(
-                  row[1],
-                  style: pw.TextStyle(
-                    fontSize: 9,
-                    fontWeight: pw.FontWeight.bold,
-                    color: isStatus ? _darkGreen : PdfColors.black,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  static pw.Widget _buildInvoiceTable({
-    required String invoiceNo,
-    required String paymentDate,
-    required String settledAmount,
-    required String stampDuty,
-    required String discountAmount,
-    required String serviceFee,
-    required String serviceFeeVat,
-    required String totalPaidAmount,
-  }) {
-    final cellStyle = const pw.TextStyle(fontSize: 9);
-    final boldStyle =
-        pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold);
-    final border = pw.TableBorder.all(color: _greyBorder, width: 0.5);
-
-    return pw.Column(children: [
-      pw.Table(
-        border: border,
-        columnWidths: {
-          0: const pw.FlexColumnWidth(1),
-          1: const pw.FlexColumnWidth(1),
-          2: const pw.FlexColumnWidth(1),
-        },
-        children: [
-          pw.TableRow(children: [
-            _tableCell('የክፍያ ቁጥር / Invoice No.', cellStyle, center: true),
-            _tableCell('የክፍያ ቀን / Payment date', cellStyle, center: true),
-            _tableCell('የተከፈለው መጠን / Settled Amount', cellStyle, center: true),
-          ]),
-          pw.TableRow(children: [
-            _tableCell(invoiceNo, cellStyle, center: true),
-            _tableCell(paymentDate, cellStyle, center: true),
-            _tableCell('$settledAmount Birr', cellStyle, center: true),
-          ]),
-        ],
-      ),
-      pw.Table(
-        border: border,
-        columnWidths: {
-          0: const pw.FlexColumnWidth(2),
-          1: const pw.FlexColumnWidth(1),
-        },
-        children: [
-          _feeRow('የቴምብር ቀረጥ / Stamp Duty', '$stampDuty Birr', cellStyle),
-          _feeRow('ቅናሽ / Discount Amount', '$discountAmount Birr', cellStyle),
-          _feeRow('የአገልግሎት ክፍያ / Service fee', '$serviceFee Birr', cellStyle),
-          _feeRow(
-              'የአገልግሎት ክፍያ ቫት / Service fee VAT', '$serviceFeeVat Birr', cellStyle),
-          _feeRow('ጠቅላላ የተከፈለ መጠን / Total Paid Amount',
-              '$totalPaidAmount Birr', boldStyle),
-        ],
-      ),
-    ]);
-  }
-
-  static pw.TableRow _feeRow(String label, String value, pw.TextStyle style) {
-    return pw.TableRow(children: [
-      _tableCell(label, style, alignRight: true),
-      _tableCell(value, style, center: true),
-    ]);
-  }
-
-  static pw.Widget _tableCell(String text, pw.TextStyle style,
-      {bool center = false, bool alignRight = false}) {
-    pw.Alignment align = pw.Alignment.centerLeft;
-    if (center) align = pw.Alignment.center;
-    if (alignRight) align = pw.Alignment.centerRight;
-    return pw.Container(
-      alignment: align,
-      padding: const pw.EdgeInsets.all(4),
-      child: pw.Text(text, style: style),
-    );
-  }
-
-  static pw.Widget _buildPaymentDetails({
-    required String amountInWords,
-    required String paymentMode,
-    required String paymentReason,
-    required String paymentChannel,
-  }) {
-    final rows = <List<String>>[
-      ['ጠቅላላ የተከፈለ ገንዘብ በፊደል / Total Amount in word', amountInWords],
-      ['የክፍያ ዘዴ / Payment Mode', paymentMode],
-      ['የክፍያ ምክንያት / Payment Reason', paymentReason],
-      ['የክፍያ መንገድ / Payment channel', paymentChannel],
-      ['ደንበኛ መልዕክት / Customer Note', ''],
-    ];
-
-    return pw.Stack(children: [
-      // Water-mark "telebirr" faded
-      pw.Positioned(
-        left: 40,
-        top: 20,
-        child: pw.Transform.rotate(
-          angle: -0.35,
-          child: pw.Text(
-            'telebirr',
-            style: pw.TextStyle(
-              fontSize: 56,
-              color: _lightGrey,
-              fontStyle: pw.FontStyle.italic,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
-      // Details rows
-      pw.Row(
+  static pw.Widget _bottomInfoRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
+      child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
+          pw.SizedBox(width: 130, child: pw.Text(label, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey800))),
           pw.Expanded(
-            flex: 3,
-            child: pw.Column(
-              children: rows
-                  .map((row) => pw.Container(
-                        margin: const pw.EdgeInsets.only(bottom: 2),
-                        decoration: pw.BoxDecoration(
-                          border: pw.Border(
-                            bottom: pw.BorderSide(
-                              color: PdfColors.grey400,
-                              width: 0.5,
-                              style: pw.BorderStyle.dashed,
-                            ),
-                          ),
-                        ),
-                        padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                        child: pw.Row(children: [
-                          pw.Expanded(
-                            flex: 3,
-                            child: pw.Text(row[0],
-                                style: const pw.TextStyle(fontSize: 9)),
-                          ),
-                          pw.Expanded(
-                            flex: 3,
-                            child: pw.Text(
-                              row[1],
-                              style: pw.TextStyle(
-                                fontSize: 9,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ]),
-                      ))
-                  .toList(),
+            child: pw.Container(
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.5)),
+              ),
+              child: pw.Text(value, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             ),
-          ),
-          // Stamp on right
-          pw.Container(
-            width: 120,
-            height: 120,
-            alignment: pw.Alignment.center,
-            child: _buildStamp(),
           ),
         ],
-      ),
-    ]);
-  }
-
-  static pw.Widget _buildStamp() {
-    return pw.Transform.rotate(
-      angle: -0.14,
-      child: pw.Container(
-        width: 110,
-        height: 110,
-        decoration: pw.BoxDecoration(
-          shape: pw.BoxShape.circle,
-          border: pw.Border.all(color: _stampBlue, width: 2.5),
-        ),
-        child: pw.Stack(
-          alignment: pw.Alignment.center,
-          children: [
-            pw.Container(
-              width: 95,
-              height: 95,
-              decoration: pw.BoxDecoration(
-                shape: pw.BoxShape.circle,
-                border: pw.Border.all(color: _stampBlue, width: 0.8),
-              ),
-            ),
-            pw.Container(
-              width: 55,
-              height: 55,
-              decoration: pw.BoxDecoration(
-                shape: pw.BoxShape.circle,
-                border: pw.Border.all(color: _stampBlue, width: 1.8),
-              ),
-              alignment: pw.Alignment.center,
-              child: pw.Text(
-                'e',
-                style: pw.TextStyle(
-                  fontSize: 34,
-                  color: _stampBlue,
-                  fontWeight: pw.FontWeight.bold,
-                  fontStyle: pw.FontStyle.italic,
-                ),
-              ),
-            ),
-            pw.Positioned(
-              top: 10,
-              child: pw.Text('Ethio Telecom Head Office',
-                  style: pw.TextStyle(
-                      fontSize: 5.5,
-                      color: _stampBlue,
-                      fontWeight: pw.FontWeight.bold)),
-            ),
-            pw.Positioned(
-              bottom: 10,
-              child: pw.Text('Federal Democratic Republic of Ethiopia',
-                  style: pw.TextStyle(
-                      fontSize: 5.5,
-                      color: _stampBlue,
-                      fontWeight: pw.FontWeight.bold)),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  static pw.Widget _buildBottomBar() {
-    return pw.Row(children: [
-      pw.Expanded(
-        child: pw.Container(
-          height: 26,
-          decoration: pw.BoxDecoration(
-            color: _green,
-            borderRadius: pw.BorderRadius.circular(13),
-          ),
-          alignment: pw.Alignment.center,
-          child: pw.Text(
-            'Bringing new possibilities',
-            style: pw.TextStyle(
-              color: PdfColors.white,
-              fontSize: 12,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
+  static pw.Widget _tableCell(String text, {bool isHeader = false, int colSpan = 1}) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+      alignment: pw.Alignment.center,
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          fontSize: 8,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
         ),
+        textAlign: pw.TextAlign.center,
       ),
-      pw.SizedBox(width: 8),
-      pw.Container(
-        width: 70,
-        height: 36,
-        child: pw.Stack(
-          children: [
-            _diagStripe(4, _green),
-            _diagStripe(10, _yellow),
-            _diagStripe(16, _red),
-            _diagStripe(22, _blue),
-          ],
-        ),
-      ),
-    ]);
+    );
   }
 
-  static pw.Widget _diagStripe(double top, PdfColor color) {
-    return pw.Positioned(
-      top: top,
-      right: -5,
-      child: pw.Transform.rotate(
-        angle: -0.78,
-        child: pw.Container(
-          width: 70,
-          height: 5,
-          decoration: pw.BoxDecoration(
-            color: color,
-            borderRadius: pw.BorderRadius.circular(2),
-          ),
+  static pw.Widget _summaryRow(String label, String value, {bool isBold = false}) {
+    return pw.Container(
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          bottom: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
+          left: pw.BorderSide(color: PdfColors.grey500, width: 0.5),
         ),
+      ),
+      padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: pw.TextStyle(fontSize: 8, fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal)),
+          pw.Text(value, style: pw.TextStyle(fontSize: 8, fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal)),
+        ],
       ),
     );
   }

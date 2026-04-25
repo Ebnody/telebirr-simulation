@@ -1,30 +1,7 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:telebirr/screens/success_screen.dart';
-import 'package:telebirr/widgets/transfer_loading_overlay.dart';
-
-/// List of supported destination banks, kept alphabetically sorted.
-const List<String> _banks = [
-  'Abay Bank',
-  'Ahadu Bank',
-  'Amhara Bank',
-  'Awash Bank',
-  'Bank of Abyssinia',
-  'Berhan Bank',
-  'Commercial Bank of Ethiopia',
-  'Cooperative Bank of Oromia',
-  'Dashen Bank',
-  'Debub Global Bank',
-  'Hibret Bank',
-  'Hijra Bank',
-  'Nib International Bank',
-  'Oromia Bank',
-  'Sidama Bank',
-  'Tsehay Bank',
-  'Wegagen Bank',
-  'Zemen Bank',
-];
+import 'package:telebirr/data/bank_data.dart';
+import 'package:telebirr/screens/transfer_to_bank_amount_screen.dart';
 
 class TransferToBankScreen extends StatefulWidget {
   const TransferToBankScreen({super.key});
@@ -36,28 +13,34 @@ class TransferToBankScreen extends StatefulWidget {
 class _TransferToBankScreenState extends State<TransferToBankScreen> {
   final TextEditingController _accountController = TextEditingController();
   final TextEditingController _receiverController = TextEditingController();
-  final TextEditingController _amountController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  String? _selectedBank;
-  bool _isLoading = false;
+  BankInfo? _selectedBank;
 
   @override
   void dispose() {
     _accountController.dispose();
     _receiverController.dispose();
-    _amountController.dispose();
     super.dispose();
   }
 
-  /// Generates a unique 9-character alphanumeric transaction ID
-  /// (matches telebirr's real format e.g. GAC9FLK43)
-  String _generateTransactionId() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final rand = Random();
-    return List.generate(9, (_) => chars[rand.nextInt(chars.length)]).join();
+  Widget _fieldLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+      ),
+    );
   }
 
-  void _submit() {
+  void _continue() {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedBank == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -66,31 +49,13 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Overlay stays visible for 5 seconds before showing success page
-    Future.delayed(const Duration(seconds: 5), () {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-      _navigateToSuccess();
-    });
-  }
-
-  void _navigateToSuccess() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SuccessScreen(
-          amount: _amountController.text,
-          receiver: _receiverController.text,
-          transactionId: _generateTransactionId(),
-          transactionType: 'Transfer to Bank',
-          bankName: _selectedBank!,
-          bankAccountNumber: _accountController.text,
+        builder: (_) => TransferToBankAmountScreen(
+          bank: _selectedBank!,
+          accountNumber: _accountController.text,
+          receiverName: _receiverController.text,
         ),
       ),
     );
@@ -108,24 +73,14 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Transfer to Bank',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      body: Stack(
-        children: [
-          _buildBody(),
-          TransferLoadingOverlay(visible: _isLoading),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    return Container(
+      body: Container(
         color: const Color.fromRGBO(245, 245, 245, 1),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -148,22 +103,39 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
                         color: Color.fromRGBO(140, 199, 63, 1),
                       ),
                       const SizedBox(height: 20),
-                      DropdownButtonFormField<String>(
+                      _fieldLabel('Select Bank'),
+                      DropdownButtonFormField<BankInfo>(
                         value: _selectedBank,
                         isExpanded: true,
                         decoration: InputDecoration(
-                          labelText: 'Bank Name',
-                          hintText: 'Select bank',
-                          prefixIcon: const Icon(Icons.account_balance),
+                          hintText: 'Please Choose',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        items: _banks
+                        items: ethiopianBanks
                             .map(
-                              (bank) => DropdownMenuItem<String>(
+                              (bank) => DropdownMenuItem<BankInfo>(
                                 value: bank,
-                                child: Text(bank),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: bank.brandColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        bank.name,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             )
                             .toList(),
@@ -173,13 +145,14 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
                           });
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null) {
                             return 'Please select a bank';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
+                      _fieldLabel('Account No'),
                       TextFormField(
                         controller: _accountController,
                         keyboardType: TextInputType.number,
@@ -187,9 +160,7 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         decoration: InputDecoration(
-                          labelText: 'Account Number',
-                          hintText: 'Enter account number',
-                          prefixIcon: const Icon(Icons.numbers),
+                          hintText: 'Enter Account Number',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -205,12 +176,11 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
+                      _fieldLabel("Receiver's Name"),
                       TextFormField(
                         controller: _receiverController,
                         decoration: InputDecoration(
-                          labelText: "Receiver's Name",
-                          hintText: 'Enter receiver name',
-                          prefixIcon: const Icon(Icons.person),
+                          hintText: "Enter Receiver's Name",
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -218,32 +188,6 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter receiver name';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _amountController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        decoration: InputDecoration(
-                          labelText: 'Amount (ETB)',
-                          hintText: 'Enter amount',
-                          prefixIcon: const Icon(Icons.money),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter amount';
-                          }
-                          if (double.tryParse(value) == null ||
-                              double.parse(value) <= 0) {
-                            return 'Please enter a valid amount';
                           }
                           return null;
                         },
@@ -256,7 +200,7 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
+                    onPressed: _continue,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(140, 199, 63, 1),
                       foregroundColor: Colors.white,
@@ -265,7 +209,7 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
                       ),
                     ),
                     child: const Text(
-                      'TRANSFER',
+                      'CONTINUE',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -277,6 +221,7 @@ class _TransferToBankScreenState extends State<TransferToBankScreen> {
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 }
